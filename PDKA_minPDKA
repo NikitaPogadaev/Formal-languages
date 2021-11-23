@@ -55,6 +55,17 @@ struct NKA {
         t[x].to[s[s.length() - 1]].insert(y);
     }
     void add_edge(ll x, ll y, char c = '1') {
+    	try {
+            if (sigma.find(c) == sigma.end()) {
+                throw 1;
+            }
+        }
+        catch (int x) {
+            if (x == 1) {
+                std::wcout << "Wrong symbol!" << '\n';
+            }
+            return;
+        }
         t[x].to[c].insert(y);
     }
     ll get_size() { return t.size(); }
