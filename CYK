@@ -1,0 +1,171 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <set>
+#include <cstring>
+#include <cassert>
+#include <stack>
+
+using vectorll = std::vector<long long>;
+using vectorint = std::vector<int>;
+using ll = long long;
+
+bool is_high_letter(char c) {
+    return !(c > 'Z' || 'A' > c);
+}
+
+struct KS {
+    std::set<char>sigma;
+    std::map<char, std::unordered_set<std::string>>t;
+
+    
+    void add_rule(char c, const std::string& s="1") {
+
+        try {
+            if (c > 'Z' || 'A' > c)throw 2;
+            for (auto i : s) {
+                if ((i>'Z'||'A'>i)&&(sigma.find(i) == sigma.end())&&(i!='1')) {
+                    throw 1;
+                }
+            }
+        }
+        catch (int x) {
+            if (x == 1) {
+                std::wcout << "Wrong right part!" << '\n';
+            }
+            if (x == 2) {
+                std::wcout << "Wrong left part!" << '\n';
+            }
+            return;
+        }
+        t[c].insert(s);
+    }
+    ll get_size() { return t.size(); }
+    KS(const std::vector<std::pair<char, std::string>>rl = {}, const std::set<char>& st = { 'a', 'b', 'c' }) {
+        t['S'];
+        for (auto i : rl) {
+            add_rule(i.first, i.second);
+        }
+        sigma = st;
+    }
+
+    bool Homsk() {
+        for (auto i : t) {
+            for (auto j : i.second) {
+                if (j.length() == 2) {
+                    if (!is_high_letter(j[0]) || !is_high_letter(j[1]) || (j[0]=='S') || (j[1]=='S'))return false;
+                }
+                else if (j.length() == 1) {
+                    if ((j[0] == '1') && (i.first=='S')) {
+                        continue;
+                    }
+                    else if(sigma.find(j[0])==sigma.end()){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    bool CYK(const std::string& str) {
+        try {
+            if (!Homsk())throw 1;
+        }
+        catch(int x){
+            if(x==1)std::wcout << "KS isn`t in normal form" << '\n';
+        }
+        ll len = str.length();
+        std::unordered_map<char, std::vector<std::vector<ll>>>MTR;
+        std::vector<char>neterm;
+        for (auto i : t) {
+            std::vector<std::vector<ll>>temp(str.length(), std::vector<ll>(str.length(), 0));
+            for (auto j : i.second) {
+                if ((j.length() == 1)&&(j[0]!='1')) {
+                    char c = j[0];
+                    for (ll h = 0; h < len; ++h)
+                        if (str[h] == c)
+                            temp[h][h] = 1;
+                }
+            }
+            MTR[i.first] = temp;
+            neterm.push_back(i.first);
+        }
+
+        for (ll l = 1; l < len; ++l) {
+            for (ll i = 0; i < len - l; ++i) {
+                for (auto A : neterm) {
+                    for (auto BC : t[A]) {
+                        if (BC.length() == 2) {
+                            MTR[A][i][i+l] = 0;
+                            for (ll k = i; k <= i + l-1; ++k) {
+                                MTR[A][i][i + l] += (MTR[BC[0]][i][k] * MTR[BC[1]][k + 1][i + l]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return MTR['S'][0][len - 1];
+
+    }
+
+};
+
+
+
+void print_in_console(KS& nka) {
+
+    std::cout << '\n';
+    for (auto i:nka.t) {
+        for (auto j : i.second) {
+            std::cout<<i.first <<"->" << j << '\n';
+        }
+    }
+    if(nka.Homsk())
+        std::cout << "KS is in normal form" << '\n';
+    else
+        std::cout << "KS isn`t in normal form" << '\n';
+
+}
+
+int main()
+{
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+
+    std::string s;
+    char c='A';
+    ll x;
+    KS ks;
+    ks.add_rule('S', "1");
+    ks.add_rule('S', "BB");
+    ks.add_rule('S', "CD");
+    ks.add_rule('B', "BB");
+    ks.add_rule('B', "CD");
+    ks.add_rule('C', "a");
+    ks.add_rule('D', "BE");
+    ks.add_rule('E', "b");
+    ks.add_rule('D', "b");
+    print_in_console(ks);
+
+    std::cout << '\n' << ks.CYK("aabb") << '\n';
+    std::cout << '\n' << ks.CYK("abbb") << '\n';
+
+}
+
+
+
+/*
+README
+Реализован структура КС-грамматики, есть возможность добавлять правила, не противоречащие контекстной свободе, так же есть конструктор по умолчанию и
+конструктор по массиву правил (неправильные правила просто не добавляются). Можно проверить, в нормальной ли форме Хомского грамматика, а также, если 
+она в таковой, исполнить алгоритм CYK(КЯК) по поиску в данной грамматике слова s. Также можно вывести все правила грамматики в консоль и узнать их количество.
+Kek.
+*/
