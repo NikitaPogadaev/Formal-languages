@@ -67,6 +67,7 @@ struct KS {
                         return false;
                     }
                 }
+                else return false;
             }
         }
         return true;
