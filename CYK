@@ -156,8 +156,11 @@ int main()
     ks.add_rule('D', "b");
     print_in_console(ks);
 
-    std::cout << '\n' << ks.CYK("aabb") << '\n';
-    std::cout << '\n' << ks.CYK("abbb") << '\n';
+    std::cout << '\n' << ks.ERLY("aabbabaababb") << '\n';
+    std::cout << '\n' << ks.ERLY("abbb") << '\n';
+    std::cout << '\n' << ks.ERLY("aaaabbb") << '\n';
+    std::cout << '\n' << ks.ERLY("bbb") << '\n';
+    std::cout << '\n' << ks.ERLY("abaaaaa") << '\n';
 
 }
 
