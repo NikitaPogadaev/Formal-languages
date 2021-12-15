@@ -340,25 +340,7 @@ int main()
 
     print_code(nka);
     print_in_console(nka);
-
-
-    std::vector<bool> used1{ 0,0,0,1 };
-    PDKA nka1(used);
-    nka1.add_edge(0, 1, "bc");
-    nka1.add_edge(0, 2, "b");
-    nka1.add_edge(0, 3, "b");
-    nka1.add_edge(0, 3);
-    nka1.add_edge(1, 3, "c");
-    nka1.add_edge(2, 3, "a");
-
-
-    nka1.minimise();
-
-    print_code(nka1);
-    print_in_console(nka1);
-}
-
-
+    }
 
 /*
 README
