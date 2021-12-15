@@ -306,6 +306,9 @@ int main()
     
     std::cout << '\n' << ks.ERLY("aabbabaababb") << '\n';
     std::cout << '\n' << ks.ERLY("abbb") << '\n';
+    std::cout << '\n' << ks.ERLY("aaaabbb") << '\n';
+    std::cout << '\n' << ks.ERLY("bbb") << '\n';
+    std::cout << '\n' << ks.ERLY("abaaaaa") << '\n';
     
     KS ks1;
     ks1.add_rule('S', "1");
@@ -321,6 +324,11 @@ int main()
 
     std::cout << '\n' << ks1.ERLY("aabb") << '\n';
     std::cout << '\n' << ks1.ERLY("abbb") << '\n';
+    std::cout << '\n' << ks1.ERLY("bb") << '\n';
+    std::cout << '\n' << ks1.ERLY("bbaa") << '\n';
+    std::cout << '\n' << ks1.ERLY("abb") << '\n';
+    std::cout << '\n' << ks1.ERLY("abab") << '\n';
+    std::cout << '\n' << ks1.ERLY("b") << '\n';
 }
 
 
