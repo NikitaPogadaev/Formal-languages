@@ -1,0 +1,353 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <set>
+#include <cstring>
+#include <cassert>
+#include <stack>
+
+using vectorll = std::vector<long long>;
+using vectorint = std::vector<int>;
+using ll = long long;
+
+
+struct NKA {
+    std::set<char>sigma;
+    struct Node {
+        bool term;
+        std::map<char, std::unordered_set<ll>>to;
+        Node() {
+            term = false;
+        }
+    };
+    std::vector<Node>t;
+
+    ll add_vertice(bool TERM = true) {
+        t.push_back(Node());
+        t[t.size() - 1].term = TERM;
+        return t.size() - 1;
+    }
+    void add_edge(ll x, ll y, const std::string& s) {
+
+        try {
+            for (auto i : s) {
+                if (sigma.find(i) == sigma.end()) {
+                    throw 1;
+                }
+            }
+        }
+        catch (int x) {
+            if (x == 1) {
+                std::wcout << "Wrong string!" << '\n';
+            }
+            return;
+        }
+
+        for (ll i = 0; i < s.length() - 1; ++i) {
+            t.push_back(Node());
+            t[x].to[s[i]].insert(t.size() - 1);
+            x = t.size() - 1;
+        }
+        t[x].to[s[s.length() - 1]].insert(y);
+    }
+    void add_edge(ll x, ll y, char c = '1') {
+        try {
+            if (sigma.find(c) == sigma.end()) {
+                throw 1;
+            }
+        }
+        catch (int x) {
+            if (x == 1) {
+                std::wcout << "Wrong symbol!" << '\n';
+            }
+            return;
+        }
+        t[x].to[c].insert(y);
+    }
+    ll get_size() { return t.size(); }
+    NKA(bool TERM = true, const std::set<char>& st = { 'a', 'b', 'c' }) {
+        t.push_back(Node());
+        t[0].term = TERM;
+        sigma = st;
+    }
+    NKA(std::vector<bool>& used, const std::vector<std::pair<std::pair<ll, ll>, std::string>>& adj = {}, const std::set<char>& st = { 'a', 'b', 'c' }) {
+        for (ll i = 0; i < used.size(); ++i) {
+            t.push_back(Node());
+            t[i].term = used[i];
+        }
+        for (ll i = 0; i < adj.size(); ++i) {
+            add_edge(adj[i].first.first, adj[i].first.second, adj[i].second);
+        }
+        sigma = st;
+    }
+};
+
+struct DKA :NKA {
+    DKA(bool TERM = true, const std::set<char>& st = { 'a', 'b', 'c' }) :NKA(TERM, st) {}
+    DKA(std::vector<bool>& used, const std::vector<std::pair<std::pair<ll, ll>, std::string>>& adj = {}, const std::set<char>& st = { 'a', 'b', 'c' }) :NKA(used, adj, st) {}
+
+    void delete_eps() {
+        for (ll i = 0; i < t.size(); ++i) {
+            std::unordered_set<ll> used;
+            used.insert(i);
+            while (t[i].to['1'].size() > 0) {
+                while (used.find(*t[i].to['1'].begin()) != used.end()) {
+                    t[i].to['1'].erase(t[i].to['1'].begin());
+                    if (t[i].to['1'].size() == 0)break;
+                }
+                if (t[i].to['1'].size() == 0)break;
+                ll top = *t[i].to['1'].begin();
+                t[i].to['1'].erase(t[i].to['1'].begin());
+                if (t[top].term)t[i].term = true;
+                for (auto j : t[top].to) {
+                    for (auto l : j.second) {
+                        t[i].to[j.first].insert(l);
+                    }
+                }
+            }
+            t[i].to.erase('1');
+        }
+    }
+
+    void normalise() {
+        delete_eps();
+        std::map<ll, Node>newQ;
+        newQ[0].term = t[0].term;
+        std::queue<std::set<ll>>stack;
+        stack.push(std::set<ll>{0});
+        std::map<std::set<ll>, ll>versh;
+        versh[std::set<ll>{0}] = 0;
+
+        int co = 1;
+
+
+        while (!stack.empty()) {
+            auto top = stack.front();
+            stack.pop();
+            for (auto c : sigma) {
+                int z1 = 0;
+                std::set<ll>temp1;
+                for (auto i : top) {
+                    if (t[i].to.find(c) != t[i].to.end()) {
+                        for (auto j : t[i].to[c]) {
+                            temp1.insert(j);
+                            if (t[j].term)z1 = 1;
+                        }
+                    }
+                }
+                if (temp1.size() > 0) {
+                    if (versh.find(temp1) == versh.end()) {
+                        stack.push(temp1);
+                        versh[temp1] = co;
+                        newQ[co];
+                        if (z1) {
+                            newQ[co].term = true;
+                        }
+                        ++co;
+                    }
+                    newQ[versh[top]].to[c].insert(versh[temp1]);
+                }
+            }
+
+        }
+
+        t.clear();
+        for (auto i : newQ) {
+            t.push_back(i.second);
+        }
+    }
+
+};
+
+
+struct PDKA :DKA {
+    PDKA(bool TERM = true, const std::set<char>& st = { 'a', 'b', 'c' }) :DKA(TERM, st) {}
+    PDKA(std::vector<bool>& used, const std::vector<std::pair<std::pair<ll, ll>, std::string>>& adj = {}, const std::set<char>& st = { 'a', 'b', 'c' }) :DKA(used, adj, st) {}
+
+    void stock() {
+        normalise();
+        ll st = add_vertice(false);
+        for (ll i = 0; i < t.size(); ++i) {
+            for (auto j : sigma) {
+                if (t[i].to[j].size() == 0) {
+                    std::string s(1, j);
+                    add_edge(i, st, s);
+                }
+            }
+        }
+    }
+
+    void minimise() {
+        stock();
+        std::unordered_map<ll, std::set<ll>>paint;
+        vectorll color(t.size());
+
+        ll count0 = 0, count1 = 0;
+        for (ll i = 0; i < t.size(); ++i) {
+            if (t[i].term)++count1;
+            else ++count0;
+        }
+        if (count0 == t.size() || count1 == t.size())return;
+
+        if (t[0].term) {
+            for (ll i = 0; i < t.size(); ++i) {
+                if (t[i].term) {
+                    color[i] = 0;
+                    paint[0].insert(i);
+                }
+                else {
+                    color[i] = 1;
+                    paint[1].insert(i);
+                }
+            }
+        }
+        else {
+            for (ll i = 0; i < t.size(); ++i) {
+                if (!t[i].term) {
+                    color[i] = 0;
+                    paint[0].insert(i);
+                }
+                else {
+                    color[i] = 1;
+                    paint[1].insert(i);
+                }
+            }
+        }
+        ll co = 2;
+        bool flag = true;
+        while (flag) {
+            flag = false;
+            auto color1 = color;
+            for (auto i : paint) {
+                if (i.second.size() <= 1)continue;
+                std::map<std::stack<ll>, ll>versh;
+                std::stack<ll>temp;
+                auto it = i.second.begin();
+                ll first = *it;
+                ++it;
+                for (auto j : sigma) {
+                    temp.push(color[*t[first].to[j].begin()]);
+                }
+                versh[temp] = i.first;
+                for (; it != i.second.end(); ++it) {
+                    std::stack<ll>temp1;
+                    ll f = *it;
+                    for (auto j : sigma) {
+                        temp1.push(color[*t[f].to[j].begin()]);
+                    }
+                    if (versh.find(temp1) == versh.end()) {
+                        versh[temp1] = co;
+                        ++co;
+                    }
+                    color1[f] = versh[temp1];
+                }
+
+            }
+            for (ll i = 0; i < color.size(); ++i) {
+                if (color[i] != color1[i]) {
+                    flag = true;
+                    color[i] = color1[i];
+                }
+            }
+            paint.clear();
+            for (ll i = 0; i < t.size(); ++i) {
+                paint[color[i]].insert(i);
+            }
+        }
+
+        std::vector<Node> t1(co);
+        for (ll i = 0; i < co; ++i) {
+            t1[i].term = t[*paint[i].begin()].term;
+        }
+        for (ll i = 0; i < t1.size(); ++i) {
+            ll old = *paint[i].begin();
+            for (auto j : sigma) {
+                ll kek = color[*t[old].to[j].begin()];
+                t1[i].to[j].insert(kek);
+            }
+        }
+        t = t1;
+    }
+
+};
+
+void print_code(NKA& nka) {
+
+    std::cout << '\n' << "This code for this automat" << " .dot:";
+    std::cout << '\n' << '\n' << "digraph G{" << '\n';
+    for (int i = 0; i < nka.t.size(); ++i) {
+        if (nka.t[i].term) {
+            std::cout << i << "[style = filled];" << '\n';
+        }
+        for (auto j : nka.t[i].to) {
+            for (auto k : j.second) {
+                std::cout << i << " -> ";
+                std::cout << k << " [label=" << j.first << "];" << '\n';
+            }
+        }
+
+    }
+    std::cout << "}" << '\n' << '\n';
+}
+
+void print_in_console(NKA& nka) {
+
+    for (ll i = 0; i < nka.t.size(); ++i) {
+        std::cout << i << ";";
+        if (nka.t[i].term)std::cout << "  terminal   ";
+        std::cout << '\n';
+        for (auto j : nka.t[i].to) {
+            std::cout << j.first << ": ";
+            for (auto l : j.second) {
+                std::cout << l << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+
+}
+
+int main()
+{
+    
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+
+    std::string s;
+    char c;
+    ll x;
+    std::vector<bool> used{ 1,1,0,0,0,1 };
+    PDKA nka(used);
+    nka.add_edge(0, 1, "a");
+    nka.add_edge(1, 2, "a");
+    nka.add_edge(1, 1, "a");
+    nka.add_edge(1, 1, "b");
+    nka.add_edge(1, 4, "a");
+    nka.add_edge(2, 3, "a");
+    nka.add_edge(2, 1, "b");
+    nka.add_edge(3, 2, "b");
+    nka.add_edge(4, 5, "b");
+    nka.add_edge(5, 1, "a");
+
+
+    nka.minimise();
+
+    print_code(nka);
+    print_in_console(nka);
+    }
+
+/*
+README
+Есть три класса, NKA, наследованный от него класс DKA, а затем и PDKA. Все их можно сконструировать по умолчанию (создастся начальная вершина с
+положительной терминальностью), от вектора bool, где i-ый элемент обозначает терминальность i-ой вершины, а также добавить список смежности.
+Также можно вручную добавить вершину или ребро со строкой или символом на нём, можно узнать количество состояний. Также в DKA есть функция normalise,
+которая детерменирует автомат и delete_eps, которая соответственно удаляет эпсилон переходы. В PDKA есть функция stock, которая добавляет стоковую вершину
+и добавляет недостающие ребра, а также minimise, которая минимизирует автомат. Также можно вывести автомат в консоль и получить код для сайта.
+Kek.
+*/
